@@ -6,23 +6,23 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/go-oidfed/lib/pkg"
+	"github.com/go-oidfed/lib"
 )
 
 type config struct {
-	EntityID                    string                                    `yaml:"entity_id"`
-	ClientName                  string                                    `yaml:"client_name"`
-	LogoURI                     string                                    `yaml:"logo_uri"`
-	TrustAnchors                pkg.TrustAnchors                          `yaml:"trust_anchors"`
-	AuthorityHints              []string                                  `yaml:"authority_hints"`
-	OrganisationName            string                                    `yaml:"organisation_name"`
-	ServerAddr                  string                                    `yaml:"server_addr"`
-	KeyStorage                  string                                    `yaml:"key_storage"`
-	OnlyAutomaticOPs            bool                                      `yaml:"filter_to_automatic_ops"`
-	EnableDebugLog              bool                                      `yaml:"enable_debug_log"`
-	TrustMarks                  []*pkg.EntityConfigurationTrustMarkConfig `yaml:"trust_marks"`
-	UseResolveEndpoint          bool                                      `yaml:"use_resolve_endpoint"`
-	UseEntityCollectionEndpoint bool                                      `yaml:"use_entity_collection_endpoint"`
+	EntityID                    string                                       `yaml:"entity_id"`
+	ClientName                  string                                       `yaml:"client_name"`
+	LogoURI                     string                                       `yaml:"logo_uri"`
+	TrustAnchors                oidfed.TrustAnchors                          `yaml:"trust_anchors"`
+	AuthorityHints              []string                                     `yaml:"authority_hints"`
+	OrganisationName            string                                       `yaml:"organisation_name"`
+	ServerAddr                  string                                       `yaml:"server_addr"`
+	KeyStorage                  string                                       `yaml:"key_storage"`
+	OnlyAutomaticOPs            bool                                         `yaml:"filter_to_automatic_ops"`
+	EnableDebugLog              bool                                         `yaml:"enable_debug_log"`
+	TrustMarks                  []*oidfed.EntityConfigurationTrustMarkConfig `yaml:"trust_marks"`
+	UseResolveEndpoint          bool                                         `yaml:"use_resolve_endpoint"`
+	UseEntityCollectionEndpoint bool                                         `yaml:"use_entity_collection_endpoint"`
 }
 
 var conf *config
@@ -47,7 +47,7 @@ func mustLoadConfig() {
 		log.Fatalf("key_storage '%s' must be a directory", conf.KeyStorage)
 	}
 	if conf.EnableDebugLog {
-		pkg.EnableDebugLogging()
+		oidfed.EnableDebugLogging()
 	}
 	if conf.ClientName == "" {
 		conf.ClientName = "example go oidfed rp"

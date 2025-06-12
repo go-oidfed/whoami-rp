@@ -11,9 +11,9 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jws"
 
-	"github.com/go-oidfed/lib/pkg"
-	"github.com/go-oidfed/lib/pkg/apimodel"
-	"github.com/go-oidfed/lib/pkg/constants"
+	"github.com/go-oidfed/lib"
+	"github.com/go-oidfed/lib/apimodel"
+	"github.com/go-oidfed/lib/oidfedconst"
 
 	"github.com/go-oidfed/whoami-rp/pkce"
 )
@@ -64,21 +64,21 @@ const errorHtml = `<!DOCTYPE html>
 func handleHome(w http.ResponseWriter, r *http.Request) {
 	const opOptionFmt = `<option value="%s">%s</option>`
 	var options string
-	filters := []pkg.EntityCollectionFilter{}
+	filters := []oidfed.EntityCollectionFilter{}
 	if conf.OnlyAutomaticOPs {
 		filters = append(
-			filters, pkg.EntityCollectionFilterOPSupportsAutomaticRegistration(conf.TrustAnchors.EntityIDs()),
+			filters, oidfed.EntityCollectionFilterOPSupportsAutomaticRegistration(conf.TrustAnchors.EntityIDs()),
 		)
 	}
-	allOPs := make(map[string]*pkg.CollectedEntity)
+	allOPs := make(map[string]*oidfed.CollectedEntity)
 	for _, ta := range conf.TrustAnchors {
-		var collector pkg.EntityCollector
+		var collector oidfed.EntityCollector
 		if conf.UseEntityCollectionEndpoint {
-			collector = pkg.SmartRemoteEntityCollector{TrustAnchors: conf.TrustAnchors.EntityIDs()}
+			collector = oidfed.SmartRemoteEntityCollector{TrustAnchors: conf.TrustAnchors.EntityIDs()}
 		} else {
-			collector = &pkg.SimpleEntityCollector{}
+			collector = &oidfed.SimpleEntityCollector{}
 		}
-		ops := pkg.FilterableVerifiedChainsEntityCollector{
+		ops := oidfed.FilterableVerifiedChainsEntityCollector{
 			Collector: collector,
 			Filters:   filters,
 		}.CollectEntities(
@@ -103,18 +103,18 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 	_, _ = io.WriteString(w, fmt.Sprintf(loginHtml, conf.ClientName, img, options))
 }
 
-func getDisplayNameFromEntityInfo(entity *pkg.CollectedEntity) string {
+func getDisplayNameFromEntityInfo(entity *oidfed.CollectedEntity) string {
 	if entity == nil {
 		return ""
 	}
 	if entity.UIInfos == nil {
 		return entity.EntityID
 	}
-	op, ok := entity.UIInfos[constants.EntityTypeOpenIDProvider]
+	op, ok := entity.UIInfos[oidfedconst.EntityTypeOpenIDProvider]
 	if ok && op.DisplayName != "" {
 		return op.DisplayName
 	}
-	fed, ok := entity.UIInfos[constants.EntityTypeFederationEntity]
+	fed, ok := entity.UIInfos[oidfedconst.EntityTypeFederationEntity]
 	if ok && fed.DisplayName != "" {
 		return fed.DisplayName
 	}
@@ -134,7 +134,7 @@ func errorPage(error, message string) string {
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	if authBuilder == nil {
-		authBuilder = pkg.NewRequestObjectProducer(conf.EntityID, getKey(oidcSigningKeyName), jwa.ES512(), 60)
+		authBuilder = oidfed.NewRequestObjectProducer(conf.EntityID, getKey(oidcSigningKeyName), jwa.ES512(), 60)
 	}
 	op := r.URL.Query().Get("op")
 	state := randASCIIString(32)
@@ -211,13 +211,13 @@ func handleCodeExchange(w http.ResponseWriter, r *http.Request) {
 	_, _ = io.WriteString(w, fmt.Sprintf(userHtml, msgData["sub"], msgData["iss"]))
 }
 
-var authBuilder *pkg.RequestObjectProducer
-var _fedLeaf *pkg.FederationLeaf
+var authBuilder *oidfed.RequestObjectProducer
+var _fedLeaf *oidfed.FederationLeaf
 
-func fedLeaf() *pkg.FederationLeaf {
+func fedLeaf() *oidfed.FederationLeaf {
 	if _fedLeaf == nil {
-		metadata := &pkg.Metadata{
-			RelyingParty: &pkg.OpenIDRelyingPartyMetadata{
+		metadata := &oidfed.Metadata{
+			RelyingParty: &oidfed.OpenIDRelyingPartyMetadata{
 				// Scope:                   "openid",
 				RedirectURIS:            []string{redirectURI},
 				ResponseTypes:           []string{"code"},
@@ -229,15 +229,15 @@ func fedLeaf() *pkg.FederationLeaf {
 				OrganizationName:        conf.OrganisationName,
 				ClientRegistrationTypes: []string{"automatic"},
 			},
-			FederationEntity: &pkg.FederationEntityMetadata{
+			FederationEntity: &oidfed.FederationEntityMetadata{
 				OrganizationName: conf.OrganisationName,
 				LogoURI:          conf.LogoURI,
 			},
 		}
 		var err error
-		_fedLeaf, err = pkg.NewFederationLeaf(
+		_fedLeaf, err = oidfed.NewFederationLeaf(
 			conf.EntityID, conf.AuthorityHints, conf.TrustAnchors, metadata,
-			pkg.NewEntityStatementSigner(
+			oidfed.NewEntityStatementSigner(
 				getKey(fedSigningKeyName),
 				jwa.ES512(),
 			), 86400, getKey(oidcSigningKeyName), jwa.ES512(),

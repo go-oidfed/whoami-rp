@@ -5,7 +5,7 @@ import (
 
 	"github.com/lestrrat-go/jwx/v3/jwa"
 
-	"github.com/go-oidfed/lib/pkg"
+	"github.com/go-oidfed/lib"
 )
 
 const fedSigningKeyName = "fed.signing.key"
@@ -17,13 +17,13 @@ func main() {
 	for _, c := range conf.TrustMarks {
 		if err := c.Verify(
 			conf.EntityID, "",
-			pkg.NewTrustMarkSigner(getKey(fedSigningKeyName), jwa.ES512()),
+			oidfed.NewTrustMarkSigner(getKey(fedSigningKeyName), jwa.ES512()),
 		); err != nil {
 			log.Fatal(err)
 		}
 	}
 	if conf.UseResolveEndpoint {
-		pkg.DefaultMetadataResolver = pkg.SmartRemoteMetadataResolver{}
+		oidfed.DefaultMetadataResolver = oidfed.SmartRemoteMetadataResolver{}
 	}
 	initServer()
 }

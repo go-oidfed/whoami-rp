@@ -13,7 +13,7 @@ import (
 
 	"github.com/lestrrat-go/jwx/v3/jwa"
 
-	"github.com/go-oidfed/lib/pkg/jwk"
+	"github.com/go-oidfed/lib/jwks"
 )
 
 func mustNewKey() *ecdsa.PrivateKey {
@@ -42,23 +42,23 @@ func mustLoadKey(name string) crypto.Signer {
 }
 
 var keys map[string]crypto.Signer
-var jwks map[string]jwk.JWKS
+var jwksMap map[string]jwks.JWKS
 
 func initKeys(names ...string) {
 	keys = make(map[string]crypto.Signer)
-	jwks = make(map[string]jwk.JWKS)
+	jwksMap = make(map[string]jwks.JWKS)
 	for _, name := range names {
 		keys[name] = mustLoadKey(name)
-		set := jwk.KeyToJWKS(keys[name].Public(), jwa.ES512())
-		jwks[name] = set
+		set := jwks.KeyToJWKS(keys[name].Public(), jwa.ES512())
+		jwksMap[name] = set
 	}
 }
 
 func getKey(name string) crypto.Signer {
 	return keys[name]
 }
-func getJWKS(name string) *jwk.JWKS {
-	set := jwks[name]
+func getJWKS(name string) *jwks.JWKS {
+	set := jwksMap[name]
 	return &set
 }
 
